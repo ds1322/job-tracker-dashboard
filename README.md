@@ -1,5 +1,7 @@
 # Job Tracker Dashboard
 
+Project Link: https://job-tracker-2c35db.netlify.app/
+
 A responsive job-application tracker built with **HTML, Tailwind CSS, and vanilla JavaScript**. All data is persisted in the browser via `localStorage` — no backend required.
 
 ## Features
