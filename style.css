@@ -1,0 +1,46 @@
+/* ==========================================================================
+   Custom styles that go beyond what Tailwind utility classes conveniently
+   express: keyframe animations, status color accents, and the empty-state
+   flex toggle (Tailwind's `hidden` uses display:none, so we flip to `flex`
+   via JS by toggling this class instead of relying on a utility alone).
+   ========================================================================== */
+
+/* Toast slide-in/out */
+@keyframes toastIn {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes toastOut {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(110%); opacity: 0; }
+}
+.toast-in  { animation: toastIn 0.25s ease-out forwards; }
+.toast-out { animation: toastOut 0.2s ease-in forwards; }
+
+/* Job card entrance */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-in { animation: cardIn 0.25s ease-out forwards; }
+
+/* Modal pop */
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.modal-pop { animation: modalPop 0.18s ease-out forwards; }
+
+/* Status left-border accent colors used on job cards */
+.status-Applied  { border-left: 4px solid #6366f1; }
+.status-Interview{ border-left: 4px solid #f59e0b; }
+.status-Offer    { border-left: 4px solid #10b981; }
+.status-Rejected { border-left: 4px solid #f43f5e; }
+
+/* Empty state needs flex (icon stacked above text), not block */
+#emptyState.show { display: flex; }
+
+/* Scrollbar polish (optional, purely cosmetic) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; }

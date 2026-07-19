@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Job Tracker Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+<script>
+  // Tailwind config: enable class-based dark mode + custom brand color
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] },
+        colors: {
+          brand: {
+            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+            400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+            800: '#3730a3', 900: '#312e81'
+          }
+        }
+      }
+    }
+  }
+</script>
+</head>
+<body class="font-sans bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+
+  <!-- ============ TOAST CONTAINER ============ -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-[90vw] max-w-sm"></div>
+
+  <!-- ============ LOGIN SCREEN (frontend-only auth) ============ -->
+  <section id="loginScreen" class="min-h-screen flex items-center justify-center px-4">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-600 text-white text-2xl font-bold mb-4 shadow-lg shadow-brand-600/30">JT</div>
+        <h1 class="text-2xl font-bold">Job Tracker</h1>
+        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to manage your job applications</p>
+      </div>
+
+      <form id="loginForm" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-6 sm:p-8 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5" for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" required placeholder="you@example.com"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5" for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" required placeholder="••••••••" minlength="4"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+        </div>
+        <p id="loginError" class="text-sm text-rose-500 hidden"></p>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-colors">
+          Sign In
+        </button>
+        <p class="text-xs text-center text-slate-400">
+          This is a frontend-only demo login. Any email/password (4+ chars) works — no backend/auth server is used.
+        </p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============ MAIN APP (hidden until login) ============ -->
+  <div id="app" class="hidden min-h-screen">
+
+    <!-- Top Navbar -->
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-sm">JT</div>
+          <span class="font-bold text-lg hidden sm:block">Job Tracker</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="userLabel" class="text-sm text-slate-500 dark:text-slate-400 hidden md:block"></span>
+
+          <button id="themeToggle" title="Toggle dark mode"
+            class="w-9 h-9 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <span id="themeIconSun">☀️</span>
+            <span id="themeIconMoon" class="hidden">🌙</span>
+          </button>
+
+          <button id="logoutBtn" class="text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+      <!-- Stats Cards -->
+      <section id="statsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4"></section>
+
+      <!-- Toolbar: search / filter / sort / add -->
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row gap-3 lg:items-center">
+        <div class="relative flex-1">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+          <input id="searchInput" type="text" placeholder="Search by company or role..."
+            class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+        </div>
+
+        <select id="statusFilter" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="all">All Statuses</option>
+          <option value="Applied">Applied</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+
+        <select id="sortSelect" class="px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <option value="dateDesc">Newest First</option>
+          <option value="dateAsc">Oldest First</option>
+          <option value="companyAsc">Company (A-Z)</option>
+          <option value="companyDesc">Company (Z-A)</option>
+        </select>
+
+        <button id="addJobBtn" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold whitespace-nowrap transition-colors">
+          + Add Job
+        </button>
+      </section>
+
+      <!-- Job list -->
+      <section id="jobListSection">
+        <div id="jobGrid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center text-center py-20">
+          <div class="text-5xl mb-3">🗂️</div>
+          <h3 class="font-semibold text-lg">No applications found</h3>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-sm mx-auto">
+            Try adjusting your search or filters, or add a new job application to get started.
+          </p>
+          <button id="emptyAddBtn" class="mt-4 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition-colors">
+            + Add Your First Job
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="text-center text-xs text-slate-400 py-6">
+      Built with HTML, Tailwind CSS &amp; vanilla JavaScript — data stored locally in your browser.
+    </footer>
+  </div>
+
+  <!-- ============ ADD/EDIT JOB MODAL ============ -->
+  <div id="jobModalOverlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+        <h2 id="modalTitle" class="font-bold text-lg">Add Job Application</h2>
+        <button id="closeModalBtn" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">✕</button>
+      </div>
+
+      <form id="jobForm" class="p-6 space-y-4">
+        <input type="hidden" id="jobId" />
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Company *</label>
+            <input id="companyInput" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Role *</label>
+            <input id="roleInput" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Status</label>
+            <select id="statusInput" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+              <option>Applied</option>
+              <option>Interview</option>
+              <option>Offer</option>
+              <option>Rejected</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Date Applied</label>
+            <input id="dateInput" type="date" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Location</label>
+            <input id="locationInput" placeholder="e.g. Remote / Bengaluru" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Job URL</label>
+            <input id="urlInput" placeholder="https://..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea id="notesInput" rows="3" placeholder="Referral, recruiter contact, interview prep notes..."
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm resize-none"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="cancelModalBtn" class="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition-colors">
+            Save Application
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ DELETE CONFIRM MODAL ============ -->
+  <div id="deleteModalOverlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center">
+      <div class="text-4xl mb-3">⚠️</div>
+      <h3 class="font-bold text-lg mb-1">Delete this application?</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">This action cannot be undone.</p>
+      <div class="flex gap-3">
+        <button id="cancelDeleteBtn" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+        <button id="confirmDeleteBtn" class="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
